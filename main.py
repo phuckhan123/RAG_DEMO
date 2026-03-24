@@ -34,6 +34,7 @@ class Main:
         wrapped = textwrap.fill(response.content, width=80)
         print(wrapped)
 if __name__ == '__main__':
+        print("abc")
         query=input("Enter a query: ")
         retriver = ollama_embeddings(query=query)
         retriver_document = []
