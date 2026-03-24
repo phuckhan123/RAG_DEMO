@@ -1,0 +1,367 @@
+1. Introduction 
+Current large language models (LLMs) are capable of understanding linguistic context and 
+generating coherent text; however, they still face several inherent limitations. For example: - 
+Outdated internal information: LLMs are trained on data up to a specific cutoff time. 
+Therefore, they lack knowledge of events occurring afterward. Although recent AI systems 
+incorporate web browsing capabilities, they still encounter challenges such as handling private 
+data, the presence of noisy information, and limited control over data sources, which leads to 
+reduced trustworthiness.  - 
+Hallucination: When a query is not covered by the internal knowledge or cannot be 
+retrieved from external sources, the model may generate answers that are incorrect or 
+unsupported by factual evidence.  - 
+Lack of domain-specific knowledge: LLMs may lack sufficient information in specialized 
+domains such as law and medicine.  
+→ To address these limitations, Retrieval-Augmented Generation (RAG) is employed to 
+leverage external data sources instead of relying solely on internal knowledge, thereby improving 
+the effectiveness of LLMs. 
+Retrieval is the process of searching for relevant information from external data sources that 
+match the input query. Since it accesses external knowledge, the retrieved information can be 
+more up-to-date and accurate. 
+RAG is a framework that combines retrieval and generation. It first retrieves relevant 
+information from external data sources, then integrates this information with the input query to 
+improve the quality of the generated output. 
+2. Architecture of RAG 
+2.1 Retriever 
+The retriever acts as an information provider in RAG systems. It returns information relevant to 
+the input query by measuring the similarity between the query and documents in external data 
+sources. 
+Based on the retrieval mechanism, retrievers can be categorized into two types: sparse retrieval 
+and dense retrieval. 
+2.1.1 Sparse Retrieval 
+Sparse retrieval methods typically rely on matching terms using an inverted index constructed 
+from raw input data. 
+External data is processed into an indexed representation, where indices are associated with 
+individual words. The system then matches these indexed terms with the input query to retrieve 
+relevant data segments. Two representative algorithms used in sparse retrieval are TF-IDF and 
+BM25. 
+TF-IDF 
+After documents are divided into chunks, the system computes: - - - 
+Term Frequency (TF): measures the frequency of a term within a chunk. The more 
+frequently a term appears, the more important it is considered.  
+TF(t,d) = number of occurrences of t in chunk d
+total number of words in chunk d
+Inverse Document Frequency (IDF): reduces the importance of terms that appear 
+frequently across many chunks and increases the importance of terms that appear in 
+fewer chunks (e.g., stopwords such as “and”, “because”, “so”, “the”).  
+IDF(t,D) = log⁡( total number of chunks
+number of chunks containing t
+Final score:  
+Limitations of TF-IDF - 
+TF-IDF = TF×IDF 
+) 
+Due to the simplicity of IDF, if a term appears in all chunks, then:  
+log⁡(1) = 0 
+which eliminates the contribution of that term. - - - 
+BM25 
+It cannot distinguish morphological variations (e.g., “go” vs. “goes”, “limit” vs. 
+“limitation”).  
+It assumes a linear relationship in term frequency importance. For example, a term 
+appearing 50 times is considered five times more important than one appearing 10 
+t
+imes, which may not reflect actual relevance.  
+It cannot capture synonym relationships due to the lack of words understanding. 
+BM25 is an improved version of TF-IDF. 
+Given a query Qcontaining keywords q1,q2,...,qn, the BM25 score for a chunk is computed as: 
+IDF(qi) = log⁡(N − n(qi)−0.5
+n(qi) + 0.5
+Where: 
+−⁡N: total number of chunks  
+−⁡n(qi): number of chunks containing keyword qi 
+TF(qi,d) =
++1) 
+freq(qi,d) ⋅ (k1 + 1)
+freq(qi,d) + k1 ⋅ (1 − b+b⋅ ∣ D ∣
+avgdl
+Score(Q,d) = ∑IDF(
+i
+Properties of BM25 - 
+qi) ⋅ TF(qi,d) 
+)
+Term frequency saturation: As freq(qi,d)increases, the marginal gain decreases (due 
+to the derivative becoming smaller), preventing documents with excessive keyword 
+frequency from dominating rankings.  - 
+Document length normalization: Documents with the same term frequency but 
+shorter length are considered more relevant. This is achieved by penalizing ∣ D ∣
+/avgdl.  
+Limitations of BM25 - - 
+Similar to TF-IDF, it cannot capture synonym relationships.  
+It performs poorly on long and complex queries, where keyword importance may 
+become diluted.  
+Advantages of Sparse Retrieval - - - 
+Fast retrieval due to inverted index structures  
+No training required, reducing computational cost  
+Efficient storage compared to high-dimensional embeddings need the huge space for 
+vector.  
+Disadvantages - - - 
+Lacks semantic understanding (no training)  
+Cannot handle synonyms or contextual meaning  
+Sensitive to query quality and database quality 
+2.1.2 Dense Retrieval 
+Dense retrieval methods encode both queries and documents into high-dimensional vector 
+representations, and then compute similarity between the query vector and document vectors. 
+A commonly used similarity function is the dot product (or cosine similarity): 
+Score(q,d) =
+q ⋅ d
+∥ q ∥⋅∥ d ∥
+A straightforward design for dense retrieval is to reuse the generation model as an embedding 
+model for retrieval. In this approach, both the retriever and the generator represent queries and 
+documents within the same vector space, which improves alignment between retrieval and 
+generation. As a result, the retriever can identify documents that are more relevant from the 
+perspective of the generator. 
+However, since this approach does not use a specialized embedding model such as BERT, it may 
+be less effective in accurately measuring similarity. In addition, using the generation model for 
+both retrieval and generation increases computational cost and resource consumption. 
+Another widely used architecture is the bi-encoder. This approach employs two separate 
+encoders (typically based on BERT) to independently encode queries and documents.One 
+encoder processes the query. The other encoder processes the documents  
+Advantages: - - - 
+Faster inference, since document embeddings can be precomputed and stored  
+Better scalability, as encoding documents separately is more efficient than repeatedly 
+processing them with a generation model  
+Reduced computational cost during retrieval  
+Disadvantages: - - 
+Since queries and documents are encoded independently, the representations may 
+not fully align  
+Additional training is required to improve interaction between the retriever and the 
+generator  
+Summary of Dense Retrieval 
+In contrast to sparse retrieval, dense retrieval captures the semantic meaning of both queries and 
+documents, rather than relying solely on exact term matching. Therefore, it can: Handle 
+synonymous expressions. Capture contextual meaning. Be trained and optimized for specific tasks  
+However, dense retrieval also faces several challenges: High computational cost for embedding 
+generation. Significant memory requirements for storing high-dimensional vectors. Lower 
+performance on exact keyword matching tasks (e.g., retrieving a specific token such as “ABC”). 
+2.1.3 Retrieval Granularity 
+Retrieval granularity refers to the unit of retrieval and indexing used in the corpus. Common 
+granularity levels include: Passage-level, Proposition-level,Token-level. 
+Passage-level Retrieval 
+Retrieval is performed at the level of text passages (paragraphs or chunks). This Granularity  
+Faster than document-level retrieval and more efficient in terms of memory usage. But retrieved 
+passages may still contain irrelevant or redundant information. 
+Proposition-level Retrieval 
+Retrieval is performed at the level of propositions (atomic statements). Advantages: More concise 
+and precise and reduced noise in retrieved results. Disadvantages: requires expensive 
+preprocessing and often relies on LLMs to extract propositions from raw text. 
+Token-level Retrieval 
+Retrieval operates at the level of individual tokens. So this have very fast retrieval and effective for 
+handling rare or specific terms Although requires significantly larger storage space. 
+Adaptive Granularity 
+In addition to fixed granularity, there exists an adaptive granularity approach. 
+Instead of retrieving from a single index, the system constructs hierarchical indices (e.g., 
+document → passage → sentence → proposition). 
+Several techniques are used in this setting: - - 
+Sentence Window Retrieval: after retrieving a relevant sentence, surrounding 
+sentences are included to provide additional context.  
+Auto-merging Retrieval: if multiple related sentences are retrieved, they are merged 
+into a larger coherent context. 
+2.2 Generation 
+Generation in RAG differs from normal generation in that it integrates retriggered data to improve 
+the accuracy of the generated content. The generation component in RAG systems can be broadly 
+categorized into two main architectures: encoder–decoder and decoder-only models. 
+Encoder–Decoder Architecture 
+This architecture separates the model into two components: - 
+Encoder: encodes the input query into a high-dimensional vector representation  
+- 
+Decoder: generates output tokens sequentially based on the encoded representation 
+using a cross-attention mechanism, while consuming previously generated tokens as 
+additional input  
+Advantages: - - 
+Captures the structure and semantics of the input effectively  
+Well-suited for tasks such as machine translation  
+Disadvantages: - - 
+More complex architecture  
+More difficult to scale compared to decoder-only models 
+Decoder-only Architecture. In this architecture, both input and output are treated as a single 
+sequence. The model uses masked self-attention, where each generated token can only attend to 
+previous tokens and not future ones. So this effective for long-form text generation and strong 
+performance in reasoning tasks.  
+Generator Accessibility. Generation models can also be categorized based on parameter 
+accessibility: Parameter-accessible (white-box) models and parameter-inaccessible (black-box) 
+models. 
+2.2.1 Parameter-Accessible Generators (White-box) 
+These generators allow parameter optimization and fine-tuning, enabling better adaptation to 
+retrieval and augmentation mechanisms. 
+2.2.2 Parameter-Inaccessible Generators (Black-box) 
+These include LLMs where internal parameters are not accessible or modifiable (e.g., GPT, 
+Gemini). Even for models that support fine-tuning, their large scale makes adaptation difficult, 
+especially in low-resource domains. 
+Therefore, a practical approach is to optimize the retrieval and augmentation components instead 
+of modifying the generator. 
+2.3 Augmentation 
+Augmentation is the process that connects the retriever and the generator, enabling the generator to 
+utilize retrieved information. This is a critical component in Retrieval-Augmented LLMs (RA
+LLMs) and is commonly categorized into three types: 
+2.3.1 Input-Layer Integration 
+In this approach, retrieved information is directly integrated into the original query and passed to 
+the generator. 
+Although effective, this method is constrained by the length of retrieved information, as the input 
+may exceed the model’s context window. 
+To mitigate this limitation: - - 
+RAG-LLM variants may truncate tokens from the beginning of the input  
+Fusion-in-Decoder (FiD) processes each retrieved document independently within the 
+encoder  
+This approach is commonly used in black-box generation-based RAG, where internal parameters 
+are inaccessible. 
+Advantages: - - - 
+High flexibility  
+Easy to implement  
+Compatible with different LLMs  
+Disadvantages: - - 
+Limited by context window size  
+Potential information loss when retrieved content is too long  
+2.3.2 Output-Layer Integration 
+This approach combines retrieval results with generated outputs. 
+kNN-LM 
+At each token generation step, predictions are made from both the language model and retrieved 
+information. These predictions are combined to select the final token. Characteristics: 
+High accuracy due to token-level integration . Slow generation speed due to per-token 
+computation need look both retriever and generation. May reduce fluency compared to standard 
+LLM outputs 
+REFEED 
+The model first generates an initial response, then revisits the retrieved data to refine and improve 
+the answer. So this have better reasoning compared to kNN-LM, since retrieval is used after initial 
+generation. But requires multiple passes through the LLM therefore higher computational cost and 
+latency.  
+2.3.3 Intermediate-Layer Integration 
+This approach integrates retrieved information directly into the internal layers of the generation 
+model, rather than appending it to the input. Specifically, retrieved representations are injected into 
+the model’s hidden layers, enabling deeper interaction between the retrieved content and the 
+generation process. Such integration can enhance the model’s capability by improving its 
+understanding of retrieved information and alleviating constraints imposed by the context window, 
+making it suitable for iterative or repeated retrieval scenarios. However, this approach requires 
+deep access to the model’s internal architecture, which is often not feasible for modern large-scale 
+LLMs. Additionally, it necessitates further training to enable effective interaction with retrieved 
+data, resulting in increased computational and implementation costs. 
+3. Training 
+Based on whether training is required, RAG approaches can be broadly categorized into two types: 
+training-free approaches and training-based approaches. 
+3.1 Training-free Approaches 
+Training-free methods directly incorporate retrieved data into the prompt without updating model 
+parameters. Since modern LLMs contain a very large number of parameters, fine-tuning and 
+updating stored knowledge become computationally expensive and time-consuming. Therefore, 
+training-free approaches are more resource-efficient but may be limited in optimizing how 
+retrieved data is utilized by the generator. Based on how retrieved information is used, these 
+approaches can be further divided into:Prompt Engineering-based Methods and Retrieval-Guided 
+Token Generation Methods. 
+3.1.1 Prompt Engineering-based Methods 
+Since LLMs are highly dependent on input queries, these methods incorporate retrieved data as 
+contextual information into the original prompt to guide generation. 
+Examples include: - - - 
+In-Context RALM: directly appends retrieved data to the prompt. This approach is 
+simple and easy to implement but is constrained by the context window when 
+documents are long.  
+IRCoT: interleaves generation and retrieval processes, allowing the system to retrieve 
+more relevant information for subsequent reasoning steps compared to standard single
+query retrieval methods. This makes it suitable for complex multi-step reasoning tasks. 
+However, it is computationally expensive and introduces latency due to repeated calls 
+to both the retriever and the LLM.  
+GENREAD: first prompts an LLM to generate contextual documents for a query, and 
+then uses these generated documents to produce the final answer.  
+- - 
+SKR: guides the LLM to determine whether it can answer a query independently and 
+only performs retrieval when necessary. However, it is challenging to train the model 
+to decide when retrieval is required, which may lead to incorrect responses.  
+ToC (Tree-of-Clarifications): retrieves documents related to ambiguous queries, 
+constructs a recursive structure of disambiguated sub-questions, and aggregates them to 
+generate the final answer. This method is effective for handling ambiguous queries but 
+introduces higher latency and a more complex workflow. 
+3.1.2 Retrieval-Guided Token Generation Methods 
+These methods incorporate retrieved information at the token generation level. For example, kNN
+LM (discussed earlier) uses retrieval information at each token generation step. This reduces 
+hallucination by grounding generation in external data. However, because retrieval is performed at 
+each step, these methods are computationally expensive and result in slower generation. 
+3.2 Independent Training 
+Independent training refers to training the retriever and the LLM separately without interaction. 
+During training: - - 
+The retriever is optimized to improve retrieval quality  
+The LLM is optimized to better utilize retrieved data  
+A common training objective for LLMs is the negative log-likelihood (NLL): 
+ℒ =−log⁡PLLM(y ∣ x) 
+Where: 
+−⁡x: input query or context  
+−⁡y: target output (ground truth)  
+−⁡PLLM(y ∣ x): probability assigned by the model  
+The goal is to maximize P(y ∣ x)using backpropagation by minimizing the loss. 
+For the retriever, training methods depend on whether it is sparse or dense. 
+Independent training offers lower computational cost and a simpler training process, while 
+maintaining high flexibility, as external data can be updated without requiring retraining of the 
+entire system. However, since the retriever and generator are optimized separately rather than 
+jointly, their representations may not be well aligned, which can limit the overall reasoning 
+performance of the system. 
+3.2 Sequential Training 
+To improve alignment between retrieval and generation, sequential training is used. In this 
+approach, one component is trained first and then fixed, while the other component is trained 
+afterward. Based on training order, sequential training can be divided into: Retriever-first and 
+LLM-first.  
+3.3.1 Retriever-first 
+The retriever is trained first and then fixed. The LLM is subsequently trained to better utilize 
+retrieved data. 
+Examples include: - - 
+RETRO: uses a pre-trained BERT-based retriever and integrates retrieved chunks into 
+an encoder–decoder architecture  
+RALMs: use external retrievers such as Google Search or ColBERTv2, followed by 
+fine-tuning the LLM 
+This approach leverages existing pre-trained models (e.g., BERT, Cohere), reducing the need for 
+training from scratch and thereby lowering overall training cost. In addition, the use of a fixed 
+embedding model ensures a stable vector space, which contributes to more consistent retrieval 
+performance. However, the approach is highly dependent on retrieval quality, and inaccuracies in 
+the retrieved information can directly propagate to and negatively affect the quality of the 
+generated output. 
+3.3.2 LLM-first 
+This approach treats the LLM as the central component and trains the retriever under its 
+supervision. Examples include: - - 
+DKRR: uses attention scores from sequence-to-sequence models to generate 
+supervision signals for retriever training  
+AAR: uses a smaller language model to generate supervision signals, making it suitable 
+for black-box LLMs  
+Advantages: - 
+Retriever learns to capture logical relevance aligned with LLM reasoning  
+Limitations: - - 
+High computational cost due to repeated LLM inference  
+Errors in LLM reasoning may propagate to retriever training  
+3.3.3 Joint Training 
+Joint training optimizes both the retriever and the generator simultaneously. 
+RAG models are trained by minimizing the log-likelihood objective over both components.For 
+example, REALM uses Maximum Inner Product Search (MIPS): 
+arg⁡max⁡(q⊤d) 
+where higher similarity between query qand document dleads to higher relevance. 
+Advantages: - - 
+End-to-end optimization  
+Reduces error propagation  
+Disadvantages: - - 
+Highly complex training process  
+Very high computational cost due to simultaneous parameter updates 
+4. Applications 
+RAG has a wide range of applications in LLM systems, including: - - - - 
+Question Answering (QA): provides more accurate responses by grounding answers in 
+external, reliable data sources  
+Fact Verification: evaluates the correctness of information using external data  
+Recommendation Systems: models user preferences and provides personalized 
+recommendations. For example, Di Palma [25] proposes retrieving information from 
+movies, images, and books to improve recommendation quality  
+Domain-specific applications: RAG is particularly useful in specialized domains where 
+standard LLMs lack sufficient knowledge. External data enables deeper understanding 
+and improves generation quality 
+5. Challenges 
+Despite its advantages, RAG faces several challenges: - - - 
+Privacy risks: incorporating external data may expose sensitive or private information  
+Limited modality: current RAG systems primarily focus on textual data. Integration 
+with multimodal data (e.g., images, audio) is still in early stages and requires further 
+research  
+Latency: since retrieval must be performed before generation, RAG systems are 
+generally slower than standard LLMs 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
