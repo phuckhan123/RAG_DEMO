@@ -1,1 +1,12 @@
-.envgit status
+.env
+
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+.vscode/
+.idea/
+
+*.db
+*.log
