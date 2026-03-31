@@ -1,7 +1,7 @@
 .env
-<<<<<<< HEAD
+
 .idea/workspace.xm
-=======
+
 
 __pycache__/
 *.pyc
@@ -13,4 +13,4 @@ venv/
 
 *.db
 *.log
->>>>>>> 638bc905467d29c5ae9e593591789cdc399e561e
+
