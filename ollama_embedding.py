@@ -44,6 +44,7 @@ class ollama_embeddings :
 
 
 
+
 #
 # embeddings = OllamaEmbeddings(
 #     model='embeddinggemma',
