@@ -7,15 +7,6 @@ load_dotenv()
 class ollama_embeddings :
     def __init__(self,query):
         self.query=query
-        # self.embeddings = OllamaEmbeddings(model='nomic-embed-text',
-        #                                    base_url= "https://ollama.binhphuc-homelab.io.vn",
-        #                                    client_kwargs={
-        #                                 "headers":  = {
-        #     "CF-Access-Client-Id": "a2ba34bce6609e562f451171a63decf5.access",
-        #     "CF-Access-Client-Secret": "52ceab3d73d63fd4d4e3426d6ef6fbfea1eb87467225ad5a0eb7c01f99993625",
-        # }
-        # }
-        #                                    )
         self.embeddings = OllamaEmbeddings(
             model=os.getenv('MODEL_EMBED'),
             base_url=os.getenv('BASE_URL'),

@@ -10,7 +10,9 @@ load_dotenv()
 
 class load_file:
     def __init__(self):
+
         self.file_path = "Rag.txt"
+
     def to_chunk(self):
         loader = TextLoader(self.file_path, encoding="utf-8")
         docs = loader.load()

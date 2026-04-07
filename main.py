@@ -21,6 +21,7 @@ class Main:
         llm = ChatOllama(
             model=self.model,
             base_url=self.base_url,
+            temperature=0,
             client_kwargs={
                 "headers": {
                     "CF-Access-Client-Id": os.getenv("CLIENT_ID"),
@@ -29,8 +30,12 @@ class Main:
             }
         )
         response = llm.invoke(self.build_messages())
-        self.messages.append({'role': 'system', 'content': response.content})
+        self.messages.append({'role': 'assistant', 'content': response.content})
         wrapped = textwrap.fill(response.content, width=80)
+        print(self.query)
+        print(self.retriver_document)
+
+        print("<<<<<<<<<<<<<<<<<<<<<<<<<<")
         print(wrapped)
 if __name__ == '__main__':
     messages = [{'role': 'system', 'content': "You must answer the question based on the context below. Do not repeat the context. Give a short and clear answer"}]
