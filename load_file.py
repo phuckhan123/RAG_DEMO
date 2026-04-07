@@ -11,11 +11,16 @@ load_dotenv()
 class load_file:
     def __init__(self):
 
-        self.file_path = "Rag.txt"
+        self.file_path = []
+        self.file_path.append("RAG.txt")
+        self.file_path.append("KG_GNN_RAG_EN.txt")
 
     def to_chunk(self):
-        loader = TextLoader(self.file_path, encoding="utf-8")
-        docs = loader.load()
+        docs = []
+        for file_path in self.file_path:
+         loader = TextLoader(file_path, encoding="utf-8")
+         docs.extend(loader.load())
+
         embeddings = OllamaEmbeddings(
             model=os.getenv('MODEL_EMBED'),
             base_url=os.getenv('BASE_URL'),

@@ -1,0 +1,128 @@
+Knowledge Graph (KG) and Graph Neural Network (GNN) in RAG
+
+1. Introduction to RAG
+
+Retrieval-Augmented Generation (RAG) combines information retrieval with
+language generation. Instead of relying only on pre-trained knowledge,
+RAG retrieves external information at runtime. This improves factual
+accuracy and reduces hallucination.
+
+Standard RAG pipeline: 1. Index documents 2. Retrieve relevant chunks 3.
+Generate answer
+
+Traditional RAG uses vector embeddings but ignores relationships between
+entities. Knowledge Graphs and GNNs address this limitation.
+
+2. What is a Knowledge Graph
+
+A Knowledge Graph represents knowledge as: - Nodes (entities) - Edges
+(relations) - Attributes
+
+Example: (Paris) –capital_of–> (France)
+
+Advantages: - Structured representation - Explicit relationships -
+Better reasoning - Less redundancy
+
+3. Role of KG in RAG
+
+With KG integration: - Query expansion using relations - Multi-hop
+reasoning - Better retrieval precision
+
+Example: Query: “Who is the CEO of the company that created iPhone?”
+
+Graph: Apple –created–> iPhone Apple –CEO–> Tim Cook
+
+Multi-hop reasoning: iPhone -> Apple -> Tim Cook
+
+4. Graph Neural Networks
+
+GNNs are neural networks designed for graph-structured data. They
+propagate information between connected nodes.
+
+General update rule: h_v^(k) = AGG( h_u^(k-1) )
+
+Where: - h_v: node embedding - AGG: aggregation function - u: neighbors
+
+Popular GNN models: - GCN - GAT - GraphSAGE - GIN
+
+5. Combining KG and GNN in RAG
+
+Pipeline:
+
+Documents ↓ Entity Extraction ↓ Build Knowledge Graph ↓ Train GNN ↓ Node
+Embeddings ↓ Retriever ↓ LLM
+
+Benefits: - Captures relationships - Multi-hop reasoning - Better
+retrieval quality
+
+6. KG-based Retrieval
+
+Instead of pure vector similarity:
+
+Query ↓ Entity linking ↓ Graph traversal ↓ Candidate nodes ↓ Reranking
+
+Advantages: - Explainable retrieval - Symbolic + semantic reasoning
+
+7. Multi-hop Reasoning
+
+Example: “Who advised the creator of Python?”
+
+Python -> Guido van Rossum Guido -> advisor -> …
+
+GNN learns these paths.
+
+8. Hybrid RAG: Vector + KG
+
+Architecture:
+
+User Query ↓ Vector Retriever ↓ KG Retriever ↓ Merge Results ↓ LLM
+
+Benefits: - Higher recall - Higher precision
+
+9. GraphRAG
+
+GraphRAG builds a graph from corpus: - Entity extraction - Graph
+construction - Community detection - Hierarchical summarization
+
+Useful for large-scale corpora.
+
+10. Challenges
+
+-   Building KG is expensive
+-   Entity linking complexity
+-   Large graph scalability
+-   GNN training cost
+
+11. Applications
+
+-   Biomedical QA
+-   Enterprise search
+-   Recommendation systems
+-   Legal assistants
+
+12. Vector vs KG vs GNN
+
+Vector: - Fast - Simple - No relationships
+
+KG: - Structured - Interpretable - Hard to build
+
+GNN: - Learns relations - Deep reasoning - Computational cost
+
+13. Real Pipeline
+
+Step 1: Load documents Step 2: NER entity extraction Step 3: Build
+triples Step 4: Construct graph Step 5: Train GNN Step 6: Build
+retriever Step 7: Connect to LLM
+
+14. Example Use Case
+
+Biomedical RAG: Gene -> Protein -> Disease
+
+GNN learns biological relationships.
+
+15. Conclusion
+
+KG + GNN improves RAG by: - Understanding relationships - Enabling
+reasoning - Reducing hallucination - Improving retrieval quality
+
+This approach is becoming a key direction in modern RAG systems.
